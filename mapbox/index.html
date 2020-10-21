@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MapBox</title>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.1.1/mapbox-gl.js'></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-language/v0.10.1/mapbox-gl-language.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.1.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #menu {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #fff;
+            padding: 10px;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #start {
+            display: block;
+            position: relative;
+            margin: 10px auto;
+            width: 20%;
+            height: 40px;
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+            color: #fff;
+            background: #ee8a65;
+        }
+    </style>
+</head>
+
+<body>
+    <div id='map'></div>
+    <div id='menu'>
+        <input id='streets-v10' type='radio' name='rtoggle' value='streets' checked='checked'>
+        <label for='streets'>streets</label>
+        <input id='light-v9' type='radio' name='rtoggle' value='light'>
+        <label for='light'>light</label>
+        <input id='dark-v9' type='radio' name='rtoggle' value='dark'>
+        <label for='dark'>dark</label>
+        <input id='outdoors-v10' type='radio' name='rtoggle' value='outdoors'>
+        <label for='outdoors'>outdoors</label>
+        <input id='satellite-streets-v9' type='radio' name='rtoggle' value='satellite'>
+        <label for='satellite'>satellite</label>
+    </div>
+    <button id="start">开始导航</button>
+    <script
+        src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.0/mapbox-gl-directions.js'></script>
+    <link rel='stylesheet'
+        href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.0.0/mapbox-gl-directions.css'
+        type='text/css' />
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoia3Jpem85IiwiYSI6ImNrZ2oweW43ODAzMHIyc214cGpnNXB4czIifQ.uZ85KwuGFWO587Fz5RgkYg';
+        var map = new mapboxgl.Map({
+            container: 'map', // container id
+            // style: 'mapbox://styles/krizo9/ckgj1lojt0j591arrx0pfuma1', // stylesheet location
+            style: 'mapbox://styles/mapbox/streets-v10',
+            center: [121.48, 31.22], // starting position [lng, lat]
+            zoom: 15.5, // starting zoom
+            pitch: 45
+        });
+
+        var language = new MapboxLanguage({ defaultLanguage: 'zh' });
+        // Add geolocate control to the map.
+        var geolocateControl = new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        })
+        var directions = new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            language: 'zh-Hans'
+        })
+
+        addControl()
+
+        var layerList = document.getElementById('menu');
+        var inputs = layerList.getElementsByTagName('input');
+
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].onclick = switchLayer;
+        }
+
+        document.getElementById('start').addEventListener('click', function () {
+            var coordinate = directions.getOrigin().geometry.coordinates;
+            map.flyTo({
+                center: coordinate
+            });
+        });
+
+        function switchLayer(layer) {
+            var layerId = layer.target.id;
+            map.setStyle('mapbox://styles/mapbox/' + layerId);
+            map.addControl(language);
+        }
+
+        function addControl() {
+            map.addControl(geolocateControl);
+            map.addControl(directions, 'top-left');
+        }
+
+        function rotateCamera(timestamp) {
+            // clamp the rotation between 0 -360 degrees
+            // Divide timestamp by 100 to slow rotation to ~10 degrees / sec
+            map.rotateTo((timestamp / 100) % 360, { duration: 0 });
+            // Request the next frame of the animation.
+            requestAnimationFrame(rotateCamera);
+        }
+
+        map.on('load', function () {
+            // Start the animation.
+            // rotateCamera(0);
+
+            // Add 3d buildings and remove label layers to enhance the map
+            var layers = map.getStyle().layers;
+            for (var i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                    // remove text labels
+                    map.removeLayer(layers[i].id);
+                }
+            }
+
+            map.addLayer({
+                'id': '3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#aaa',
+
+                    // use an 'interpolate' expression to add a smooth transition effect to the
+                    // buildings as the user zooms in
+                    'fill-extrusion-height': [
+                        "interpolate", ["linear"], ["zoom"],
+                        15, 0,
+                        15.05, ["get", "height"]
+                    ],
+                    'fill-extrusion-base': [
+                        "interpolate", ["linear"], ["zoom"],
+                        15, 0,
+                        15.05, ["get", "min_height"]
+                    ],
+                    'fill-extrusion-opacity': .6
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
