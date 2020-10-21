@@ -23,7 +23,7 @@
 
         #menu {
             position: absolute;
-            bottom: 10px;
+            bottom: 20px;
             right: 10px;
             background: #fff;
             padding: 10px;
@@ -75,8 +75,8 @@
             // style: 'mapbox://styles/krizo9/ckgj1lojt0j591arrx0pfuma1', // stylesheet location
             style: 'mapbox://styles/mapbox/streets-v10',
             center: [121.48, 31.22], // starting position [lng, lat]
-            zoom: 15.5, // starting zoom
-            pitch: 45
+            zoom: 12, // starting zoom
+            // pitch: 45
         });
 
         var language = new MapboxLanguage({ defaultLanguage: 'zh' });
@@ -104,7 +104,9 @@
         document.getElementById('start').addEventListener('click', function () {
             var coordinate = directions.getOrigin().geometry.coordinates;
             map.flyTo({
-                center: coordinate
+                center: coordinate,
+                zoom: 17, // starting zoom
+                pitch: 70
             });
         });
 
