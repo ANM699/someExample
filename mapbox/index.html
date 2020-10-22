@@ -80,6 +80,7 @@
         });
 
         var language = new MapboxLanguage({ defaultLanguage: 'zh' });
+
         // Add geolocate control to the map.
         var geolocateControl = new mapboxgl.GeolocateControl({
             positionOptions: {
@@ -92,7 +93,9 @@
             language: 'zh-Hans'
         })
 
-        addControl()
+        map.addControl(language);
+        map.addControl(geolocateControl);
+        map.addControl(directions, 'top-left');
 
         var layerList = document.getElementById('menu');
         var inputs = layerList.getElementsByTagName('input');
@@ -110,15 +113,12 @@
             });
         });
 
+
+
         function switchLayer(layer) {
             var layerId = layer.target.id;
             map.setStyle('mapbox://styles/mapbox/' + layerId);
             map.addControl(language);
-        }
-
-        function addControl() {
-            map.addControl(geolocateControl);
-            map.addControl(directions, 'top-left');
         }
 
         function rotateCamera(timestamp) {
@@ -129,18 +129,18 @@
             requestAnimationFrame(rotateCamera);
         }
 
-        map.on('load', function () {
+        function addLayer() {
             // Start the animation.
             // rotateCamera(0);
-
             // Add 3d buildings and remove label layers to enhance the map
-            var layers = map.getStyle().layers;
-            for (var i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                    // remove text labels
-                    map.removeLayer(layers[i].id);
-                }
-            }
+            // var layers = map.getStyle().layers;
+            // for (var i = 0; i < layers.length; i++) {
+            //     if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+            //         // remove text labels
+            //         map.removeLayer(layers[i].id);
+            //     }
+            //     // if (layers[i].id === '3d-buildings') map.removeLayer('3d-buildings');
+            // }
 
             map.addLayer({
                 'id': '3d-buildings',
@@ -167,7 +167,10 @@
                     'fill-extrusion-opacity': .6
                 }
             });
-        });
+        }
+
+        map.on('load', addLayer);
+        // map.on('style.load', addLayer);
     </script>
 </body>
 
